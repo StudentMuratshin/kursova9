@@ -56,7 +56,7 @@ int main()
     srand(time(NULL));
    
    
-    //RenderWindow window(VideoMode(1920, 1080), "xD");
+    //RenderWindow window(VideoMode(1920, 1080), "xD")
     RenderWindow window(VideoMode(), "курсовая", Style::Fullscreen);
     window.setFramerateLimit(fps);
     
