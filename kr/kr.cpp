@@ -11,27 +11,35 @@ using namespace sf;
 using namespace std;
 
 
-
-class Shapee: public CircleShape {
-private:
-    int r, R, G, B;
-    float x, y;
-    CircleShape c1;
-
-
+class Circle: public CircleShape 
+{
 public:
-    
-
-    Shapee(int R, int G, int B, float x, float y) {
+    Circle(int R, int G, int B, float x, float y, int r) 
+    {
         R = R; G = G; B = B;
         this->setFillColor(Color(R, G, B));
-        r = abs(rand() % 51 - 100);
+        
         this->setRadius(r);
         this->setPosition(x,y);
         this->setOrigin(r,r);
     }
-    
 };
+
+class polygon: public ConvexShape
+{
+public:
+    polygon(vector <Vector2f> xy)
+    {
+        this->setPointCount(xy.size());
+        for (int i = 0; i < xy.size(); i++)
+        {
+            this->setPoint(i, xy[i]);
+        }
+        this->setFillColor(Color::White);
+    }
+};
+
+
 
 float check_in_circle(float x1, float x2, float y1, float y2)
 {
@@ -46,15 +54,20 @@ float length(float x1, float x2)
 
 int main()
 {
-    int phi = 30 , fps = 30;
+
+    int phi = 30, fps = 30, type = 2;
     srand(time(NULL));
    
-   
+    
     RenderWindow window(VideoMode(), "курсовая", Style::Fullscreen);
+    //window.setKeyRepeatEnabled(false);
     window.setFramerateLimit(fps);
     
 
-    vector <Shapee> circles;    
+    vector <Circle> circles;    //вектор окружностей
+    vector <Circle> pol;        //вектор вершин многоугольников
+    vector <polygon> polygons;  //вектор многоугольников
+    vector <Vector2f> point_xy; //вектор с координатами вершин многоульников
 
     while (window.isOpen())
     {
@@ -67,22 +80,69 @@ int main()
             if (event.type == Event::Closed)
                 window.close();
         }
-        Vector2i position = Mouse::getPosition();
+        
 
         //добавление объектов при помощи мыши
-        
-        
-        
-        if (Mouse::isButtonPressed(Mouse::Left))
+        Vector2i position = Mouse::getPosition();
+
+        if (Keyboard::isKeyPressed(Keyboard::Space))            //менять объекты на пробел
         {
-            circles.push_back(Shapee(250, 250, 0, position.x, position.y));
+            type = (type + 1) % 2;
         }
         
+        
+        if (type == 1 or type == 2)                             // многульники
+        {
+            static bool lock_click; 
+            if (event.type == sf::Event::MouseButtonPressed)    
+            {
+                if (event.mouseButton.button == sf::Mouse::Left && lock_click != true) 
+                {
+                    point_xy.push_back(Vector2f(position.x, position.y));     //добавляет в вектор координаты
+                    pol.push_back(Circle(250, 250, 0, position.x, position.y, 3));
+                    if (point_xy.size() > 5)
+                    {
+                        polygons.push_back(polygon(point_xy));          //добавляет много-ики в вектор
+                        point_xy.clear();
+                    }
+                    
+                    lock_click = true; 
+                }
+            }
+            if (event.type == sf::Event::MouseButtonReleased) 
+            {
+                if (event.mouseButton.button == sf::Mouse::Left) 
+                {
+                    lock_click = false; 
+                }
+            }
+        }
+        
+        if (type == 0)
+        {
+            static bool lock_click;
+            if (event.type == sf::Event::MouseButtonPressed)
+            {
+                if (event.mouseButton.button == sf::Mouse::Left && lock_click != true)
+                {
+                    circles.push_back(Circle(250, 250, 0, position.x, position.y, 50)); //добавляет окру-ти в вектор
+
+                    lock_click = true;
+                }
+            }
+            if (event.type == sf::Event::MouseButtonReleased)
+            {
+                if (event.mouseButton.button == sf::Mouse::Left)
+                {
+                    lock_click = false;
+                }
+            }
+        }
         if (Mouse::isButtonPressed(Mouse::Right))
         {
             for (int i = 0; i < circles.size(); i++)
             {
-                
+
                 float length = check_in_circle(position.x, circles[i].getPosition().x, position.y, circles[i].getPosition().y);
                 if (length <= circles[i].getRadius())
                 {
@@ -90,8 +150,6 @@ int main()
                 }
             }
         }
-        
-        
         //лучик
         //поворот
         float X1, Y1, X2, Y2;
@@ -130,7 +188,7 @@ int main()
 
         //лайны
         VertexArray lines_1(LinesStrip, 2);
-        
+
         for (int i = 0; i < 2 * phi; ++i)
         {
             ksi--;
@@ -138,27 +196,27 @@ int main()
             Y1 = -sin(ksi * M_PI / 180) * position.x + cos(ksi * M_PI / 180) * position.y;
             lines_1[0].position = Vector2f(X1, Y1);
             float check = -1;
-            
+
             if (circles.size() != 0)
             {
                 float min_to_cirlce = length(circles[0].getPosition().x, circles[0].getPosition().y);
                 for (int j = 0; j < circles.size(); ++j)
                 {
-                    
+
                     float vect_lenght = length(X1, Y1);                             //длина вектора
                     Vector2f norm_lenght(X1 / (vect_lenght), Y1 / (vect_lenght));  // нормирую вектор
-                    
+
                     float lenght_circles = length(circles[j].getPosition().x, circles[j].getPosition().y); // c 0;0 до окр
 
                     if (lenght_circles <= min_to_cirlce)
                     {
                         min_to_cirlce = lenght_circles;
                     }
-                  
+
 
                     norm_lenght.x = norm_lenght.x * lenght_circles;    //увеличиваю вектор до длины окружности
                     norm_lenght.y = norm_lenght.y * lenght_circles;
-                    
+
                     float length_in_circles = check_in_circle(norm_lenght.x, circles[j].getPosition().x, norm_lenght.y, circles[j].getPosition().y); //длина положения конца вектора до окружности
                     if (check == 1 and lenght_circles <= min_to_cirlce)
                     {
@@ -172,17 +230,24 @@ int main()
                         check = 1;
                         lines_1[0].position = Vector2f(norm_lenght.x, norm_lenght.y);  //если да, то принимает координаты, внутри окр-ти
                     }
-                    
+
                 }
             }
-            
+
             window.draw(lines_1);
         }
 
         for (auto& s : circles) 
         {
             window.draw(s);
-
+        }
+        for (auto& s : pol)
+        {
+            window.draw(s);
+        }
+        for (auto& s : polygons)
+        {
+            window.draw(s);
         }
         window.display();
     }

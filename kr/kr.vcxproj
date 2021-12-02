@@ -153,6 +153,9 @@
   <ItemGroup>
     <ClCompile Include="kr.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="kr.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
