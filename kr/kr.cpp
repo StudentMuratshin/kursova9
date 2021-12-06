@@ -76,7 +76,7 @@ bool intersect(float x1, float y1, float x2, float y2, float x3, float y3, float
 int main()
 {
 
-    int phi = 30, fps = 30, type = 2; 
+    int phi = 30, fps = 30, type = 2;
     float x, y;
     srand(time(NULL));
 
@@ -114,7 +114,7 @@ int main()
 
 
         if (type == 1 or type == 2)                             // многульники
-        {
+        {                               /// перенести в конструктор какого-то объекта
             static bool lock_click;
             if (event.type == sf::Event::MouseButtonPressed)
             {
@@ -125,6 +125,7 @@ int main()
                     if (point_xy.size() > 5)
                     {
                         polygons.push_back(polygon(point_xy));          //добавляет много-ики в вектор
+                        pol.clear();
                         point_xy.clear();
                     }
 
@@ -161,6 +162,7 @@ int main()
                 }
             }
         }
+
         if (Mouse::isButtonPressed(Mouse::Right))
         {
             for (int i = 0; i < circles.size(); i++)
@@ -170,6 +172,26 @@ int main()
                 if (length <= circles[i].getRadius())
                 {
                     circles.erase(circles.begin() + i);
+                }
+            }
+
+            for (int i = 0; i < polygons.size(); i++)
+            {
+                int count_intersect = 0;
+                
+                for (int j = 0; j < polygons[i].getPointCount() - 1; j++)
+                {
+                    if (intersect(0, 0, position.x, position.y, polygons[i].getPoint(j).x, polygons[i].getPoint(j).y,
+                        polygons[i].getPoint(j + 1).x, polygons[i].getPoint(j + 1).y, x, y))
+                    {
+                        count_intersect++;
+                        cout << count_intersect << endl;
+                    }
+                }
+
+                if (count_intersect % 2 != 0 and count_intersect != 0)
+                {
+                    polygons.erase(polygons.begin() + i);
                 }
             }
         }
@@ -185,19 +207,6 @@ int main()
             phi = phi - 1;
         }
 
-        /*VertexArray line(Triangles, 3);
-        X1 = cos(phi * M_PI/180) * position.x - sin(phi * M_PI / 180) * position.y;
-        Y1 = sin(phi * M_PI / 180) * position.x + cos(phi * M_PI / 180) * position.y;
-        X2 = cos(phi * M_PI / 180) * position.x + sin(phi * M_PI / 180) * position.y;
-        Y2 = -sin(phi * M_PI / 180) * position.x + cos(phi * M_PI / 180) * position.y;
-        line[0].position = Vector2f(0, 0);
-        line[1].position = Vector2f(X1, Y1);
-        line[2].position = Vector2f(X2, Y2);
-
-        line[0].color = Color::White;
-        line[1].color = Color(255, 255, 255, 0);
-        line[2].color = Color(255, 255, 255, 0);*/
-
         int ksi = phi;
 
 
@@ -205,9 +214,6 @@ int main()
 
         //отрисовка объектов
         window.clear(Color::Black);
-
-
-
 
         //лайны
         VertexArray lines_1(LinesStrip, 2);
@@ -219,10 +225,10 @@ int main()
             Y1 = -sin(ksi * M_PI / 180) * position.x + cos(ksi * M_PI / 180) * position.y;
             lines_1[0].position = Vector2f(X1, Y1);
             float check = -1;
-
+            float length_polygon = 10000000;
+            float min_length_polygon = 10000000;
             if (polygons.size() != 0)
-            {
-                
+            { 
                 for (int i = 0; i < polygons.size(); i++)
                 {
                     for (int j = 0; j < polygons[i].getPointCount() - 1; j++)
@@ -230,9 +236,14 @@ int main()
                         if (intersect(0, 0, X1, Y1, polygons[i].getPoint(j).x, polygons[i].getPoint(j).y,
                             polygons[i].getPoint(j + 1).x, polygons[i].getPoint(j + 1).y, x, y))
                         {
-                            lines_1[0].position = Vector2f(x, y);
+                            check = 1;
+                            length_polygon = length(x, y);
+                            if (length_polygon <= min_length_polygon)
+                            {
+                                lines_1[0].position = Vector2f(x, y);
+                                min_length_polygon = length_polygon;
+                            }
                         }
-                        
                     }
                 }
             }
@@ -257,25 +268,32 @@ int main()
                     norm_lenght.x = norm_lenght.x * lenght_circles;    //увеличиваю вектор до длины окружности
                     norm_lenght.y = norm_lenght.y * lenght_circles;
 
+                    //проверка окружности до полигона
                     float length_in_circles = check_in_circle(norm_lenght.x, circles[j].getPosition().x, norm_lenght.y, circles[j].getPosition().y); //длина положения конца вектора до окружности
-                    if (check == 1 and lenght_circles <= min_to_cirlce)
+
+                    if (check == 1 and length_polygon < lenght_circles)
+                    {
+                        if (length_in_circles <= circles[j].getRadius() and lenght_circles <= vect_lenght)
+                        {
+                            continue;
+                        }
+                    }
+                    
+                    if (check == 1 and lenght_circles <= min_to_cirlce or length_polygon >= lenght_circles)
                     {
                         if (length_in_circles <= circles[j].getRadius() and lenght_circles <= vect_lenght)
                         {
                             lines_1[0].position = Vector2f(norm_lenght.x, norm_lenght.y);
                         }
                     }
+                    
                     if (length_in_circles <= circles[j].getRadius() and lenght_circles <= vect_lenght and check == -1) //проверка находится ли положения конца вектора в окружности
                     {
                         check = 1;
                         lines_1[0].position = Vector2f(norm_lenght.x, norm_lenght.y);  //если да, то принимает координаты, внутри окр-ти
                     }
-
                 }
             }
-
-            
-
             window.draw(lines_1);
         }
 
